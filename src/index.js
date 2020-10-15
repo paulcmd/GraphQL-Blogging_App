@@ -8,7 +8,6 @@ import Post from './resolvers/Post'
 import Comment from './resolvers/Comment'
 import prisma from './prisma'
 
-
 const pubsub = new PubSub()
 
 // GraphQLServer
@@ -20,13 +19,16 @@ const server = new GraphQLServer({
         Subscription,
         User,
         Post,
-        Comment,
+        Comment
     },
-    context: {
-        db,
-        pubsub,
-        prisma
-    },
+    context(request) {
+        return {
+            db,
+            pubsub,
+            prisma,
+            request
+        }
+    }
 })
 
 //Start Server

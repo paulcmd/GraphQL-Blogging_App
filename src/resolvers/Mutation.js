@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import getUserId from '../utils/getUserId'
 
 const dummy = async () => {
     const email = 'james@example.com'
@@ -49,32 +50,30 @@ const Mutation = {
         }
     },
 
-    async login(parent, args, { prisma }, info){
-
+    async login(parent, args, { prisma }, info) {
         const user = await prisma.query.user({
             where: {
                 email: args.data.email
             }
         })
 
-        if(!user){
+        if (!user) {
             throw new Error('Unable to login')
         }
 
         const isMatch = await bcrypt.compare(args.data.password, user.password)
         //args.data.password is the plain text password provided by the user. user.password is the stored hashed password
         //bcrypt.compare hashes the plain text password and compares to the hashed password
-        
-        if(!isMatch){
+
+        if (!isMatch) {
             throw new Error('Unable to login')
         }
 
         return {
             user,
-            token: jwt.sign({userId: user.id}, 'thisisasecret')
+            token: jwt.sign({ userId: user.id }, 'thisisasecret')
         }
     },
-
 
     async deleteUser(parent, args, { prisma }, info) {
         const userExists = await prisma.exists.User({ id: args.id })
@@ -103,7 +102,8 @@ const Mutation = {
         )
     },
 
-    createPost(parent, args, { prisma }, info) {
+    createPost(parent, args, { prisma, request }, info) {
+        const userId = getUserId(request) //the userId is returned from getUserId function....decoded.userId
         return prisma.mutation.createPost(
             {
                 data: {
@@ -112,7 +112,7 @@ const Mutation = {
                     published: args.data.published,
                     author: {
                         connect: {
-                            id: args.data.author
+                            id: userId
                         }
                     }
                 }
