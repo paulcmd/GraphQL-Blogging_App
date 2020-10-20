@@ -51,7 +51,6 @@ const Mutation = {
     },
 
     async login(parent, args, { prisma }, info) {
-
         const user = await prisma.query.user({
             where: {
                 email: args.data.email
@@ -77,7 +76,6 @@ const Mutation = {
     },
 
     async deleteUser(parent, args, { prisma, request }, info) {
-
         const userId = getUserId(request)
 
         const userExists = await prisma.exists.User({ id: args.id })
@@ -97,7 +95,6 @@ const Mutation = {
     },
 
     updateUser(parent, args, { prisma, request }, info) {
-
         const userId = getUserId(request)
 
         return prisma.mutation.updateUser(
@@ -112,7 +109,6 @@ const Mutation = {
     },
 
     createPost(parent, args, { prisma, request }, info) {
-
         const userId = getUserId(request) //the userId is returned from getUserId function....decoded.userId
 
         return prisma.mutation.createPost(
@@ -132,7 +128,19 @@ const Mutation = {
         )
     },
 
-    updatePost(parent, args, { prisma }, info) {
+    async updatePost(parent, args, { prisma, request }, info) {
+        const userId = getUserId(request)
+
+        const postExists = await prisma.exists.Post({
+            id: args.id,
+            author: {
+                id: userId
+            }
+        })
+
+        if (!postExists) {
+            throw new Error('Unable to update post')
+        }
 
         return prisma.mutation.updatePost(
             {
@@ -145,18 +153,17 @@ const Mutation = {
         )
     },
 
-   async deletePost(parent, args, { prisma, request }, info) {
-
+    async deletePost(parent, args, { prisma, request }, info) {
         const userId = getUserId(request)
 
-        const postExists = await prisma.exists.Post({ 
-            id: args.id,  //check if post id is same as the one provided in args
-            author:{
-                id: userId      //check if author id is same as user id from token
-            }                //if either of the 2 dont match up, postExists will return false
+        const postExists = await prisma.exists.Post({
+            id: args.id, //check if post id is same as the one provided in args
+            author: {
+                id: userId //check if author id is same as user id from token
+            } //if either of the 2 dont match up, postExists will return false
         })
 
-        if(!postExists){
+        if (!postExists) {
             throw new Error('Unable to delete post')
         }
 
@@ -170,7 +177,8 @@ const Mutation = {
         )
     },
 
-    createComment(parent, args, { prisma }, info) {
+    createComment(parent, args, { prisma, request }, info) {
+        const userId = getUserId(request)
 
         return prisma.mutation.createComment(
             {
@@ -178,7 +186,7 @@ const Mutation = {
                     text: args.data.text,
                     author: {
                         connect: {
-                            id: args.data.author
+                            id: userId
                         }
                     },
                     post: {
@@ -192,8 +200,19 @@ const Mutation = {
         )
     },
 
-    updateComment(parent, args, { prisma }, info) {
+   async updateComment(parent, args, { prisma, request }, info) {
+        const userId = getUserId(request)
 
+        const commentExists = await prisma.exists.Comment({
+            id: args.id,
+            author:{
+                id: userId
+            }
+        })
+
+        if (!commentExists) {
+            throw new Error('Unable to update comment')
+        } 
         return prisma.mutation.updateComment(
             {
                 where: {
@@ -205,8 +224,19 @@ const Mutation = {
         )
     },
 
-    deleteComment(parent, args, { prisma }, info) {
+    async deleteComment(parent, args, { prisma, request }, info) {
+        const userId = getUserId(request)
 
+        const commentExists = await prisma.exists.Comment({
+            id: args.id,
+            author:{
+                id: userId
+            }
+        })
+
+        if (!commentExists) {
+            throw new Error('Cannot delete comment')
+        }
         return prisma.mutation.deleteComment(
             {
                 where: {
