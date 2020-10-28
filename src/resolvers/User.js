@@ -1,4 +1,17 @@
-const User = {}
+import getUserId from '../utils/getUserId'
+
+const User = {
+    email(parent, args, { request }, info) {
+        const userId = getUserId(request)
+
+        if (userId && userId === parent.id) {
+            return parent.email
+        }
+
+        return null
+    }
+}
+//modifying email so only the logged in user can see their email and not other users'
 
 export { User as default }
 
