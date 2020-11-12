@@ -1,14 +1,31 @@
 import getUserId from '../utils/getUserId'
 
 const User = {
-    email(parent, args, { request }, info) {
-        const userId = getUserId(request)
+    email: {
+        fragment: 'fragment userId on User { id }',
+        resolve(parent, args, { request }, info) {
+            const userId = getUserId(request, false)
 
-        if (userId && userId === parent.id) {
-            return parent.email
+            if (userId && userId === parent.id) {
+                return parent.email
+            }
+
+            return null
         }
+    },
+    posts: {
+        fragment: 'fragment userId on User { id }',
+        resolve(parent, args, { prisma }, info) {
 
-        return null
+            return prisma.query.posts({
+                where: {
+                    published: true,
+                    author: {
+                        id: parent.id
+                    }
+                }
+            })
+        }
     }
 }
 //modifying email so only the logged in user can see their email and not other users'
