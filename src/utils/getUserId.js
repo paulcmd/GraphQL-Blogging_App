@@ -2,7 +2,9 @@ import jwt from 'jsonwebtoken'
 
 const getUserId = (request, requireAuth = true) => {
     //requireAuth is set to true by default, so that if set to false. getUserId will return undefined
-    const header = request.request.headers.authorization
+    const header = request.request ? request.request.headers.authorization : request.connection.context.Authorization
+    // with queries and mutations, we are using http requests(headers)
+    // with subscriptions we are using web sockets(request.connection...)
     //passing in the entire request object and drilling down to just the header
 
     if (header) {
