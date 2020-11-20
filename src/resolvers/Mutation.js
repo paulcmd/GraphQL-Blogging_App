@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs'
 import getUserId from '../utils/getUserId'
 import generateToken from '../utils/generateToken'
+import hashedPassword from '../utils/hashedPassword'
 
 const dummy = async () => {
     const email = 'james@example.com'
@@ -29,16 +30,12 @@ const Mutation = {
         //     throw new Error('Email is taken')
         // } NOT NECESSARY TO CHECK IF USER EXISTS, PRISMA DOES THAT
 
-        if (args.data.password.length < 8) {
-            throw new Error('Password must be 8 characters or longer')
-        }
-
-        const hashedPassword = await bcrypt.hash(args.data.password, 10)
+        const hashPassword = await hashedPassword(args.data.password)
         //bcrypt.hash takes in 2 arguments. the plain text password and a salt(10 extra random characters)
         const user = prisma.mutation.createUser({
             data: {
                 ...args.data,
-                password: hashedPassword
+                password: hashPassword
             }
         })
         //info cant be used to return User scalar objects in this case as we are returning user and token
@@ -96,6 +93,11 @@ const Mutation = {
 
     updateUser(parent, args, { prisma, request }, info) {
         const userId = getUserId(request)
+
+        if ( typeof args.data.password === 'string' ){
+            args.data.password = await hashedPassword(args.data.password)
+            // await...waits for call to hashedPassword function
+        }
 
         return prisma.mutation.updateUser(
             {
